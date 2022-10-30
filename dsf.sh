@@ -282,13 +282,17 @@ function _whereis(){
         sourcedir=$( grep 'SOURCE=' "$myprofile" | sed 's#^SOURCE=##g' | sort )
         if echo "${mydir}" | grep "$sourcedir" >/dev/null
         then
+            color ok
             echo "> SOURCE $sourcedir" | grep --colour "${sourcedir}"
+            color reset
             echo
             _bFound=1
         else
             if echo "$sourcedir" | grep "${mydir}" >/dev/null
             then
+                color ok
                 echo "> SOURCE $sourcedir" | grep --colour "${mydir}"
+                color reset
                 echo
                 _bFound=1
             fi
@@ -304,14 +308,18 @@ function _whereis(){
         do
             if echo "${mydir}" | grep "$mytarget" >/dev/null
             then
+                color ok
                 echo "> SOURCE $sourcedir"
+                color reset
                 echo "  > TARGET $mytarget" | grep --colour "${mytarget}"
                 _bFound=1
                 echo
             fi
             if echo "$mytarget" | grep "${mydir}" >/dev/null
             then
+                color ok
                 echo "> SOURCE $sourcedir"
+                color reset
                 echo "  > TARGET $mytarget" | grep --colour "${mydir}"
                 _bFound=1
                 echo
@@ -835,6 +843,8 @@ shift $((OPTIND - 1))
 
 # --- options handling is done...
 
+test -z "$DSF_ACTION" && echo "HINT: Use the parameter -h to get the help page."
+
 #echo "DEBUG: $# params left: $*"
 
 if [ $# -ge 1 ]; then
@@ -897,10 +907,6 @@ case "$DSF_ACTION" in
 
     *)
         echo
-        echo "Nothing to do anymore."
 esac
-
-echo
-echo "DONE."
 
 # ----------------------------------------------------------------------
