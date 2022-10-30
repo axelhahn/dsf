@@ -1,0 +1,26 @@
+{
+    "title": "DSF",
+    "author": "Axel Hahn",
+    "tagline": "Deploy source files. Helper tool to update local files in other projects.",
+    "ignore": {
+        "files": ["30_PHP-client/Plugins/Checks/_skeleton.md"],
+        "folders": ["99_Not_Ready"]
+    },
+    "html": {
+        "auto_toc": true,
+        "auto_landing": false,
+        "date_modified": false,
+        "jump_buttons": true,
+        "edit_on_github": "axelhahn/dsf/tree/master/docs",
+        "edit_on_": {
+            "name": "Gitlab",
+            "basepath": "https://git-repo.iml.unibe.ch/iml-open-source/__PROJECT__/tree/master/docs"
+        },
+        "links": {
+            "Git Repo": "https://github.com/axelhahn/dsf.git",
+            "Axels Docs": "https://www.axel-hahn.de/docs/"
+        },
+        "theme": "daux-blue",
+        "search": true
+    }
+}
