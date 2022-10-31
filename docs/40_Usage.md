@@ -184,7 +184,7 @@ To add a target you need to specify the source first and then you can add the ta
 
 If the target does not exist yet then will be prompted. If you accept (just press `Return`) then the target will be added and the file will be synced there.
 
-```
+```txt
 ========== SET SOURCE
 INFO: transformed [sources/basesclasses/] --> [/home/axel/tmp/sources/basesclasses]
 INFO: SOURCE=/home/axel/tmp/sources/basesclasses was set.
