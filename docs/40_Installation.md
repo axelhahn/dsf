@@ -1,7 +1,7 @@
 # Installation
 
-The script is useful in the user of the current desktop user context only.
-It is highly recommended to extract the script as the user you logged in on desktop.
+The script is useful in the context of the current desktop user only.
+It is highly recommended to extract the script as the user you logged in on desktop - not as root.
 
 ## Get the files
 

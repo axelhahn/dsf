@@ -28,7 +28,7 @@ DSF_PROFILES=${DSF_SELFDIR}/profiles
 DSF_CONFIG=
 DSF_SOURCE=
 DSF_TARGET=
-DSF_VERSION=0.08
+DSF_VERSION=0.09
 
 # ----------------------------------------------------------------------
 # private
@@ -386,8 +386,10 @@ function sourcesList(){
     typeset -i i=0
     h2 "LIST PROFILES"
     if ! ls -1 ${DSF_PROFILES}/*.txt >/dev/null 2>&1; then
+        echo 
         echo No profile was created yet.
         echo 
+        exit 1
     fi
     local filelist="${DSF_CONFIG}"
     test -z "$filelist" && filelist="${DSF_PROFILES}/*.txt"
@@ -843,7 +845,7 @@ shift $((OPTIND - 1))
 
 # --- options handling is done...
 
-test -z "$DSF_ACTION" && echo "HINT: Use the parameter -h to get the help page."
+test $OPTIND -eq 1 && echo "HINT: Use the parameter -h to get the help page."
 
 #echo "DEBUG: $# params left: $*"
 
