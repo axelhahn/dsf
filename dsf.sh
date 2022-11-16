@@ -16,6 +16,9 @@
 # 2022-08-30  v0.06   axel hahn  add edit functionality; write config
 # 2022-09-25  v0.07   axel hahn  add where is (param -w)
 # 2022-10-30  v0.08   axel hahn  clearify results of -w param
+# 2022-10-30  v0.08   axel hahn  clearify results of -w param
+# 2022-11-02  v0.09   axel hahn  show -h on no prams; show info if no profile exists
+# 2022-11-16  v0.10   axel hahn  show config file per profile; test vi if EDITOR is not set
 # ======================================================================
 
 DSF_SELFDIR="$( dirname $0 )"
@@ -28,7 +31,7 @@ DSF_PROFILES=${DSF_SELFDIR}/profiles
 DSF_CONFIG=
 DSF_SOURCE=
 DSF_TARGET=
-DSF_VERSION=0.09
+DSF_VERSION=0.10
 
 # ----------------------------------------------------------------------
 # private
@@ -253,9 +256,14 @@ function _editconfig(){
         echo "Set a source first."
     else
         if [ -z "$EDITOR" ]; then
-            echo "SKIP: the variable EDITOR was not set."
+            echo "INFO: The variable EDITOR was not set. Trying vi(m)..."
+            which vi  >/dev/null 2>&1 && export EDITOR=vi
+            which vim >/dev/null 2>&1 && export EDITOR=vim
+        fi
+        if [ -z "$EDITOR" ]; then
+            echo "SKIP: The editor VI was not found."
         else
-            echo "INFO: starting $EDITOR ${DSF_CONFIG} ..."
+            echo "INFO: Starting $EDITOR ${DSF_CONFIG} ..."
             $EDITOR "${DSF_CONFIG}"
             _updateConfig
         fi
@@ -404,6 +412,8 @@ function sourcesList(){
         # echo  "           |"
         # grep 'TARGET=' "$myprofile" | sed 's#^#           +-- #g'
         # grep 'TARGET=' "$myprofile" >/dev/null || echo "           INFO: no target yet"
+        color cmd
+        echo "$myprofile"
         color ok
         grep 'SOURCE=' "$myprofile" | sed 's#^SOURCE=##g' | sort
         color reset
@@ -879,7 +889,7 @@ case "$DSF_ACTION" in
             echo "  $( key "l" ) - list configuration"
             echo "  $( key "e" ) - edit configuration"
             echo "  $( key "c" ) - compare source and target"
-            echo "  $( key "u" ) - update all targets"
+            echo "  $( key "u" ) - update selected target(s)"
             echo
             showPrompt "selection >"
             read -r selected
