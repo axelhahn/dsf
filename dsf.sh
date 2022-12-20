@@ -241,7 +241,7 @@ function _diff(){
             color cmd
             ls -ld "${DSF_SOURCE}/${mydir}" "${DSF_TARGET}/${mydir}"
             echo
-            diff -y --suppress-common-lines -N --color -r "${DSF_TARGET}/${mydir}" "${DSF_SOURCE}/${mydir}" | head -20
+            diff -y --suppress-common-lines -N --color -r "${DSF_TARGET}/${mydir}" "${DSF_SOURCE}/${mydir}"
             color reset
         done
 
@@ -253,7 +253,7 @@ function _diff(){
                 ls -l --sort=none "${DSF_SOURCE}/${myfile}" | sed "s#^#FROM #"
                 ls -l "${DSF_TARGET}/${_newfile}"           | sed "s#^#TO   #"
                 echo
-                diff -y --suppress-common-lines -N --color "${DSF_TARGET}/${_newfile}" "${DSF_SOURCE}/${myfile}" | head -20
+                diff -y --suppress-common-lines -N --color "${DSF_TARGET}/${_newfile}" "${DSF_SOURCE}/${myfile}"
             else
                 echo "Up to date."
             fi
