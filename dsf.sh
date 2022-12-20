@@ -19,6 +19,7 @@
 # 2022-10-30  v0.08   axel hahn  clearify results of -w param
 # 2022-11-02  v0.09   axel hahn  show -h on no prams; show info if no profile exists
 # 2022-11-16  v0.10   axel hahn  show config file per profile; test vi if EDITOR is not set
+# 2022-12-20  v0.11   axel hahn  add param -W that does the same like -w but shows diffs
 # ======================================================================
 
 DSF_SELFDIR="$( dirname $0 )"
@@ -31,7 +32,7 @@ DSF_PROFILES=${DSF_SELFDIR}/profiles
 DSF_CONFIG=
 DSF_SOURCE=
 DSF_TARGET=
-DSF_VERSION=0.10
+DSF_VERSION=0.11
 
 # ----------------------------------------------------------------------
 # private
@@ -214,14 +215,23 @@ function _copytoalltargets(){
 function _diff(){
     local myfile=
     local _newfile=
+
+
+    local bak_DSF_SOURCE="$DSF_SOURCE"
+    local bak_DSF_TARGET="$DSF_TARGET"
+    
+    test -n "$1" && sourceSet "$1" >/dev/null 2>&1
+    test -n "$2" && targetSet "$2" >/dev/null 2>&1
+
     if [ "$DSF_TARGET" = "ALL" ]; then
         for mytarget in $( getTargets )
         do
-            targetSet "${mytarget}"
+            targetSet "${mytarget}" >/dev/null
             _diff
         done
     else
-        h2 "DIFF to ${DSF_TARGET}"
+        echo
+        h2 "COMPARE ${DSF_SOURCE} <-> ${DSF_TARGET}"
 
         for mydir in $( getFolders )
         do
@@ -229,9 +239,9 @@ function _diff(){
             echo "FROM ${DSF_SOURCE}/${mydir}" 
             echo "TO   ${DSF_TARGET}/${mydir}"
             color cmd
-            ls -ld --sort=none "${DSF_SOURCE}/${mydir}" "${DSF_TARGET}/${mydir}"
+            ls -ld "${DSF_SOURCE}/${mydir}" "${DSF_TARGET}/${mydir}"
             echo
-            diff -y --suppress-common-lines -N --color -r "${DSF_TARGET}/${mydir}" "${DSF_SOURCE}/${mydir}" 
+            diff -y --suppress-common-lines -N --color -r "${DSF_TARGET}/${mydir}" "${DSF_SOURCE}/${mydir}" | head -20
             color reset
         done
 
@@ -239,15 +249,18 @@ function _diff(){
         do
             _newfile=$( _getTargetfile "$myfile" )
             h3 "File: ${myfile}"
-            echo "FROM ${DSF_SOURCE}/${myfile}" 
-            echo "TO   ${DSF_TARGET}/${_newfile}"
-            color cmd
-            ls -l --sort=none "${DSF_SOURCE}/${myfile}" "${DSF_TARGET}/${_newfile}"
-            echo
-            diff -y --suppress-common-lines -N --color "${DSF_TARGET}/${_newfile}" "${DSF_SOURCE}/${myfile}" 
-            color reset
+            if ! diff "${DSF_TARGET}/${_newfile}" "${DSF_SOURCE}/${myfile}" >/dev/null 2>&1; then
+                ls -l --sort=none "${DSF_SOURCE}/${myfile}" | sed "s#^#FROM #"
+                ls -l "${DSF_TARGET}/${_newfile}"           | sed "s#^#TO   #"
+                echo
+                diff -y --suppress-common-lines -N --color "${DSF_TARGET}/${_newfile}" "${DSF_SOURCE}/${myfile}" | head -20
+            else
+                echo "Up to date."
+            fi
         done
     fi
+    DSF_SOURCE="$bak_DSF_SOURCE"
+    DSF_TARGET="$bak_DSF_TARGET"
 }
 
 function _editconfig(){
@@ -271,6 +284,7 @@ function _editconfig(){
 }
 
 function _whereis(){
+    local _doDiff="$1"
     local _bFound=0
     local mydir
     mydir="$( realpath . )"
@@ -282,32 +296,40 @@ function _whereis(){
     local filelist="${DSF_CONFIG}"
     test -z "$filelist" && filelist="${DSF_PROFILES}/*.txt"
 
-    echo
-    echo "--- scan in sources"
+    # echo
+    # echo "--- scan in sources"
     echo
     for myprofile in $( ls -1 $filelist 2>&1 )
     do
         sourcedir=$( grep 'SOURCE=' "$myprofile" | sed 's#^SOURCE=##g' | sort )
         if echo "${mydir}" | grep "$sourcedir" >/dev/null
         then
-            color ok
-            echo "> SOURCE $sourcedir" | grep --colour "${sourcedir}"
-            color reset
-            echo
+            if [ -z "$_doDiff" ]; then
+                color ok
+                echo "> SOURCE $sourcedir" | grep --colour "${sourcedir}"
+                color reset
+                echo
+            else
+                _diff "$sourcedir" "ALL"
+            fi
             _bFound=1
         else
             if echo "$sourcedir" | grep "${mydir}" >/dev/null
             then
-                color ok
-                echo "> SOURCE $sourcedir" | grep --colour "${mydir}"
-                color reset
-                echo
+                if [ -z "$_doDiff" ]; then
+                    color ok
+                    echo "> SOURCE $sourcedir" | grep --colour "${mydir}"
+                    color reset
+                    echo
+                else
+                    _diff "$sourcedir" "ALL"
+                fi
                 _bFound=1
             fi
         fi
     done
 
-    echo "--- scan in targets"
+    # echo "--- scan in targets"
     echo
     for myprofile in $( ls -1 $filelist 2>&1 )
     do
@@ -316,19 +338,27 @@ function _whereis(){
         do
             if echo "${mydir}" | grep "$mytarget" >/dev/null
             then
-                color ok
-                echo "> SOURCE $sourcedir"
-                color reset
-                echo "  > TARGET $mytarget" | grep --colour "${mytarget}"
+                if [ -z "$_doDiff" ]; then
+                    color ok
+                    echo "> SOURCE $sourcedir"
+                    color reset
+                    echo "  \`-> TARGET $mytarget" | grep --colour "${mytarget}"
+                else
+                    _diff "$sourcedir" "$mytarget"
+                fi
                 _bFound=1
                 echo
             fi
             if echo "$mytarget" | grep "${mydir}" >/dev/null
             then
-                color ok
-                echo "> SOURCE $sourcedir"
-                color reset
-                echo "  > TARGET $mytarget" | grep --colour "${mydir}"
+                if [ -z "$_doDiff" ]; then
+                    color ok
+                    echo "> SOURCE $sourcedir"
+                    color reset
+                    echo "  \`-> TARGET $mytarget" | grep --colour "${mydir}"
+                else
+                    _diff "$sourcedir" "$mytarget"
+                fi
                 _bFound=1
                 echo
             fi
@@ -748,6 +778,7 @@ OPTIONS:
                 You need to set a source (see -s) before -u
     -w          where is .. something for the current directory?
                 Search current directory for definitions in sources or targets
+    -W          Like -w but it shows diffs
 
 All projects are written as txt file wit md5 hash into \"profiles\" directory.
     $DSF_PROFILES
@@ -822,7 +853,7 @@ color reset
 
 test -d "${DSF_PROFILES}" || mkdir -p "${DSF_PROFILES}"
 
-while getopts ":h :c :e :i :l :u :d: :f: :s: :t: :w" OPT; do
+while getopts ":h :c :e :i :l :u :d: :f: :s: :t: :w :W" OPT; do
   if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
     OPT="${OPTARG%%=*}"       # extract long option name
     OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
@@ -847,7 +878,8 @@ while getopts ":h :c :e :i :l :u :d: :f: :s: :t: :w" OPT; do
     s) sourceSet "${OPTARG}" ;;
     t) targetSet "${OPTARG}"; DSF_ACTION=copy ;;
     u) DSF_ACTION="updateall" ;;
-    w) DSF_ACTION="whereis";;
+    w) DSF_ACTION="whereis"; doDiff=;;
+    W) DSF_ACTION="whereis"; doDiff=1;;
   esac
 done
 
@@ -915,7 +947,7 @@ case "$DSF_ACTION" in
     copy) _copy ;;
     edit) _editconfig ;;
     updateall) _copytoalltargets ;;
-    whereis) _whereis ;;
+    whereis) _whereis $doDiff ;;
 
     *)
         echo
