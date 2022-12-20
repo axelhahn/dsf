@@ -8,7 +8,7 @@ _______________________________________________________________________________
 
  ▄▄▄▄    ▄▄▄▄  ▄▄▄▄▄   |
  █   ▀▄ █▀   ▀ █       |  DEPLOY
- █    █ ▀█▄▄▄  █▄▄▄▄   |    SOURCE                                       v0.08
+ █    █ ▀█▄▄▄  █▄▄▄▄   |    SOURCE                                       v0.11
  █    █     ▀█ █       |      FILES  ..  to multiple local targets
  █▄▄▄▀  ▀▄▄▄█▀ █       |
  
@@ -41,9 +41,10 @@ OPTIONS:
                 You need to set a source (see -s) before -u
     -w          where is .. something for the current directory?
                 Search current directory for definitions in sources or targets
+    -W          Like -w but it shows diffs
 
 All projects are written as txt file wit md5 hash into "profiles" directory.
-    /home/axel/sources/bash/deploy_sourcefiles/profiles
+    [install-dir]/profiles
 To delete a file or target grep for it in the profiles dir.
 
 EXAMPLES:
