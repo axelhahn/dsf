@@ -20,6 +20,7 @@
 # 2022-11-02  v0.09   axel hahn  show -h on no prams; show info if no profile exists
 # 2022-11-16  v0.10   axel hahn  show config file per profile; test vi if EDITOR is not set
 # 2022-12-20  v0.11   axel hahn  add param -W that does the same like -w but shows diffs
+# 2024-07-20  v0.12   axel hahn  highlight current dir in path selection; add param -S; autodetect target on source seelction
 # ======================================================================
 
 DSF_SELFDIR="$( dirname $0 )"
@@ -32,7 +33,9 @@ DSF_PROFILES=${DSF_SELFDIR}/profiles
 DSF_CONFIG=
 DSF_SOURCE=
 DSF_TARGET=
-DSF_VERSION=0.11
+DSF_VERSION=0.12
+
+DSF_WORKDIR="$( realpath . )"
 
 # ----------------------------------------------------------------------
 # private
@@ -286,12 +289,10 @@ function _editconfig(){
 function _whereis(){
     local _doDiff="$1"
     local _bFound=0
-    local mydir
-    mydir="$( realpath . )"
 
     h2 "Where is something for me?"
     echo
-    echo -n "scanning for ${mydir} ..."
+    echo -n "scanning for ${DSF_WORKDIR} ..."
     echo
     local filelist="${DSF_CONFIG}"
     test -z "$filelist" && filelist="${DSF_PROFILES}/*.txt"
@@ -302,7 +303,7 @@ function _whereis(){
     for myprofile in $( ls -1 $filelist 2>&1 )
     do
         sourcedir=$( grep 'SOURCE=' "$myprofile" | sed 's#^SOURCE=##g' | sort )
-        if echo "${mydir}" | grep "$sourcedir" >/dev/null
+        if echo "${DSF_WORKDIR}" | grep "$sourcedir" >/dev/null
         then
             if [ -z "$_doDiff" ]; then
                 color ok
@@ -314,11 +315,11 @@ function _whereis(){
             fi
             _bFound=1
         else
-            if echo "$sourcedir" | grep "${mydir}" >/dev/null
+            if echo "$sourcedir" | grep "${DSF_WORKDIR}" >/dev/null
             then
                 if [ -z "$_doDiff" ]; then
                     color ok
-                    echo "> SOURCE $sourcedir" | grep --colour "${mydir}"
+                    echo "> SOURCE $sourcedir" | grep --colour "${DSF_WORKDIR}"
                     color reset
                     echo
                 else
@@ -336,7 +337,7 @@ function _whereis(){
         sourcedir=$( grep 'SOURCE=' "$myprofile" | sed 's#^SOURCE=##g' | sort )
         for mytarget in $( grep 'TARGET=' "$myprofile" | sed 's#^TARGET=##g' | sort )
         do
-            if echo "${mydir}" | grep "$mytarget" >/dev/null
+            if echo "${DSF_WORKDIR}" | grep "$mytarget" >/dev/null
             then
                 if [ -z "$_doDiff" ]; then
                     color ok
@@ -349,13 +350,13 @@ function _whereis(){
                 _bFound=1
                 echo
             fi
-            if echo "$mytarget" | grep "${mydir}" >/dev/null
+            if echo "$mytarget" | grep "${DSF_WORKDIR}" >/dev/null
             then
                 if [ -z "$_doDiff" ]; then
                     color ok
                     echo "> SOURCE $sourcedir"
                     color reset
-                    echo "  \`-> TARGET $mytarget" | grep --colour "${mydir}"
+                    echo "  \`-> TARGET $mytarget" | grep --colour "${DSF_WORKDIR}"
                 else
                     _diff "$sourcedir" "$mytarget"
                 fi
@@ -377,6 +378,18 @@ function getFiles(){
 function getFolders(){
     cat "${DSF_CONFIG}" | grep "^DIR=" | cut -f 2- -d "=" | sort
 }
+
+# Mark the current folder in source or target list (using grep --colour)
+# This function uses have piped in data
+# <command> | mark_currentFilderInList
+function mark_currentFilderInList(){
+    while read -r line
+    do
+        echo -n "    "
+        grep --colour "${DSF_WORKDIR}" <<< "$line" || echo "$line"
+    done
+}
+
 # get a list of defined sources
 function getSources(){
     grep "^SOURCE=" ${DSF_PROFILES}/*.txt | cut -f 2- -d "=" | sort
@@ -425,6 +438,7 @@ function sourcesList(){
     h2 "LIST PROFILES"
     if ! ls -1 ${DSF_PROFILES}/*.txt >/dev/null 2>&1; then
         echo 
+        
         echo No profile was created yet.
         echo 
         exit 1
@@ -530,9 +544,16 @@ function sourceSet(){
             _updateConfig
         else
             echo "Doing nothing"
+            exit 0
         fi
     fi
     echo "INFO: SOURCE=$DSF_SOURCE was set."
+
+    # detect target with current dir
+    mytarget=$( getTargets | grep "$DSF_WORKDIR" | head -1 )
+    test -n "$mytarget" && targetSet "$mytarget"
+    test -z "$mytarget" && ( echo; echo "INFO: $DSF_WORKDIR was not found in the list of targets.")
+
 }
 
 # ----------------------------------------------------------------------
@@ -687,18 +708,21 @@ function targetSet(){
 
 # enter a source to set
 function sourcePrompt(){
+        local mysource
+        local mytarget
         echo "--- Select a source directory:"
         echo
-        echo "- select target as full path from list"
+        echo "- select source as full path from list"
         echo "- enter searchterm to take the first matching item or"
         echo "- enter full path of a new source"
         echo
-        getSources | sed "s#^#    #"
+        getSources | mark_currentFilderInList
         echo
         showPrompt "  source >"
         read -r mysource
         test -z "$mysource" && exit
         sourceSet "$mysource"
+
         echo
 }
 # enter a target to set
@@ -709,7 +733,7 @@ function targetPrompt(){
         echo "- use keyword ALL to update all targets or"
         echo "- enter full path of a new target"
         echo
-        getTargets | sed "s#^#    #"
+        getTargets | mark_currentFilderInList
         echo
         showPrompt "  target >"
         read -r mytarget
@@ -771,6 +795,7 @@ OPTIONS:
     -i          interactive mode to select a source and a target
     -l          list defined sources and its targets
     -s [FROM]   set a source directory (to use -f, -t, -u)
+    -S          set a source in interactive mode
     -t [TO]     set a target for a given source
                 You need to set a source (see -s) before -t
     -u          update ALL known targets; [TO] is not required - targets will
@@ -786,11 +811,17 @@ To delete a file or target grep for it in the profiles dir.
 
 EXAMPLES:
 
-Create/ set a source
+Create/ set a source.
+The target inside the current durectory will be detected and then the files
+will be copied to the target.
+
+    $_self -S
+                Set a source interactively and update files in autodetected 
+                target.
+
     $_self -s $_src
-                -s = set source
-                Set a source. If it does not exist yet than a new profile will
-                be created interactively.
+                Set a given source source. If it does not exist yet than a new
+                profile will be created interactively.
 
 Add source files and directories
     $_self -s $_src -d abc
@@ -853,7 +884,7 @@ color reset
 
 test -d "${DSF_PROFILES}" || mkdir -p "${DSF_PROFILES}"
 
-while getopts ":h :c :e :i :l :u :d: :f: :s: :t: :w :W" OPT; do
+while getopts ":h :c :e :i :l :u :d: :f: :s: :S :t: :w :W" OPT; do
   if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
     OPT="${OPTARG%%=*}"       # extract long option name
     OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
@@ -861,7 +892,6 @@ while getopts ":h :c :e :i :l :u :d: :f: :s: :t: :w :W" OPT; do
 
   fi
   # echo "OPT = [$OPT]; OPTARG = [$OPTARG]"
-
 
   case "$OPT" in
     # ----- HELP
@@ -873,9 +903,10 @@ while getopts ":h :c :e :i :l :u :d: :f: :s: :t: :w :W" OPT; do
     i) DSF_ACTION="menu";;
 
     l) sourcesList; exit 0;;
-    d) dirAdd "${OPTARG}" ;;
-    f) fileAdd "${OPTARG}";;
-    s) sourceSet "${OPTARG}" ;;
+    d) dirAdd "${OPTARG}"; DSF_ACTION= ;;
+    f) fileAdd "${OPTARG}"; DSF_ACTION= ;;
+    s) sourceSet "${OPTARG}"; DSF_ACTION=copy ;;
+    S) sourcePrompt; DSF_ACTION=copy ;;
     t) targetSet "${OPTARG}"; DSF_ACTION=copy ;;
     u) DSF_ACTION="updateall" ;;
     w) DSF_ACTION="whereis"; doDiff=;;
