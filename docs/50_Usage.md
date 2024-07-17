@@ -8,7 +8,7 @@ _______________________________________________________________________________
 
  ▄▄▄▄    ▄▄▄▄  ▄▄▄▄▄   |
  █   ▀▄ █▀   ▀ █       |  DEPLOY
- █    █ ▀█▄▄▄  █▄▄▄▄   |    SOURCE                                       v0.11
+ █    █ ▀█▄▄▄  █▄▄▄▄   |    SOURCE                                       v0.12
  █    █     ▀█ █       |      FILES  ..  to multiple local targets
  █▄▄▄▀  ▀▄▄▄█▀ █       |
  
@@ -34,6 +34,7 @@ OPTIONS:
     -i          interactive mode to select a source and a target
     -l          list defined sources and its targets
     -s [FROM]   set a source directory (to use -f, -t, -u)
+    -S          set a source in interactive mode
     -t [TO]     set a target for a given source
                 You need to set a source (see -s) before -t
     -u          update ALL known targets; [TO] is not required - targets will
@@ -44,16 +45,22 @@ OPTIONS:
     -W          Like -w but it shows diffs
 
 All projects are written as txt file wit md5 hash into "profiles" directory.
-    [install-dir]/profiles
+    /home/axel/skripte/deploy_shared_files/profiles
 To delete a file or target grep for it in the profiles dir.
 
 EXAMPLES:
 
-Create/ set a source
+Create/ set a source.
+The target inside the current durectory will be detected and then the files
+will be copied to the target.
+
+    dsf.sh -S
+                Set a source interactively and update files in autodetected 
+                target.
+
     dsf.sh -s /home/axel/deployfiles/docs
-                -s = set source
-                Set a source. If it does not exist yet than a new profile will
-                be created interactively.
+                Set a given source source. If it does not exist yet than a new
+                profile will be created interactively.
 
 Add source files and directories
     dsf.sh -s /home/axel/deployfiles/docs -d abc
@@ -138,7 +145,6 @@ targets/
 └── app_b
     └── vendor
 ```
-
 
 ### Add the source
 
@@ -277,6 +283,18 @@ scanning for /home/axel/tmp/targets ...
 > SOURCE /home/axel/tmp/sources/basesclasses
   > TARGET /home/axel/tmp/targets/app_b/vendor
 ```
+
+### Update base files in your app
+
+In your app you can update the default files of a given base source. Change the directory to your app.
+
+```txt
+cd ~/tmp/targets/app_a/
+```
+
+With `dsf -S` you get a list of all sources and can select from it.
+
+After selecting a source its targets will be scanned to find a matching folder in the current working directory.
 
 ### Update all targets
 
