@@ -188,10 +188,20 @@ function _fileupdate(){
 # start to deploy FILES to DSF_TARGET
 function _copy(){
     local myfile=
+    if [ -z "${DSF_SOURCE}" ]; then
+        echo "ERROR: set a source first"
+        exit 1
+    fi
+
     # h2 "DEPLOY files to $DSF_TARGET"
     if [ "$DSF_TARGET" = "ALL" ]; then
         _copytoalltargets
     else
+        if [ -z "${DSF_TARGET}" ]; then
+            echo "ERROR: set a target first"
+            exit 1
+        fi
+
         for mydir in $( getFolders )
         do
             _foldersync "${mydir}"
@@ -206,6 +216,10 @@ function _copy(){
 # start to deploy to all targets
 # called from _copy if the target is the keyword "ALL"
 function _copytoalltargets(){
+    if [ -z "${DSF_SOURCE}" ]; then
+        echo "ERROR: set a source first"
+        exit 1
+    fi
     # h2 "UPDATE ALL TARGETS"
     for mytarget in $( getTargets )
     do
