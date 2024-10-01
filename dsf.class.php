@@ -45,7 +45,8 @@ class dsfproject {
             preg_match_all('/^FILE=(.*)$/m', $s, $aFiles);
             preg_match_all('/^TARGET=(.*)$/m', $s, $aTargets);
 
-            $sKey=basename($sProfileConfig,'.txt');
+            // $sKey=basename($sProfileConfig,'.txt');
+            $sKey=$aSource[1][0];
 
             // extend the list of profiles with the new one
             $this->_aProfiles[$sKey] = [
@@ -83,32 +84,35 @@ class dsfproject {
      * @return array|bool
      */
     public function detectCurrentPath(): array|bool{
-        echo __METHOD__ . "\n";
+        // echo __METHOD__ . "\n";
         $aReturn=[];
         $sCurrentDir=getcwd();
 
         // loop over soource projects
         foreach ( $this->_aProfiles as $sKey => $aProfile ){
-            echo $aProfile['source'] . "\n";
+            // echo "DEBUG: check source ".$aProfile['source'] . "\n";
             if ( $aProfile['source'] === $sCurrentDir ){
                 $aReturn['source_hit'] = $sKey;
             }
             if(strstr($aProfile['source'], $sCurrentDir)){
-                $aReturn['source'] = $sKey;
+                $aReturn['source'][] = $sKey;
             }
         }
 
         // loop over targets
-        foreach($this->_aTargets as $sKey => $aTarget){
-            $aVal=[
-                $sKey => $aTarget
-            ];
-            if ( $sKey === $sCurrentDir ){
-                $aReturn['target_hit'] = $aVal;
-            }
-            if(strstr($sKey, $sCurrentDir)){
-                $aReturn['target'] = $aVal;
-                break;
+        foreach($this->_aTargets as $sKey => $aEntry){
+            foreach ($aEntry as $aTarget){
+                // echo "DEBUG: check target ".$sKey . "\n";
+                $aVal=[
+                    $sKey => $aTarget
+                ];
+                if ( $sKey === $sCurrentDir ){
+                    $aReturn['target_hit'] = $sKey;
+                }
+                if(strstr($sKey, $sCurrentDir)){
+                    $aReturn['target'][] = $sKey;
+                    break;
+                }
             }
         }
         return $aReturn;

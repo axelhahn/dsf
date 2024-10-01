@@ -35,6 +35,26 @@ function cecho($sColor, $sText){
     color("reset");
 }
 
+    /**
+     * read user input with a given prefix
+     * @param string $sPrefix prefix to show in front of the input
+     * @param mixed $default value to return if the user does not enter anything
+     * @return string the user entered string
+     */
+
+function input($sPrefix, $default = null) 
+{    
+    color('input', $sPrefix ? $sPrefix : '>');
+    echo ' ';
+
+    if (PHP_OS == 'WINNT') {
+        $sReturn = stream_get_line(STDIN, 1024, PHP_EOL);
+    } else {
+        $sReturn = readline('');
+    }
+    return $sReturn ? $sReturn : $default;
+}
+
 // ----------------------------------------------------------------------
 // MAIN
 // ----------------------------------------------------------------------
@@ -56,11 +76,25 @@ _______________________________________________________________________________
 ";
 
 color("reset");
+echo "Current path: ".getcwd()."\n";
 
-echo getcwd()."\n";
-// $oSrc->dump();
 
-print_r($oSrc->detectCurrentPath());
-// echo "\033[31m H E L L O \033[0m\n";
 
-// $oSrc->dump();
+// $oSrc->dump(); die();
+
+global $aHits;
+$aHits=$oSrc->detectCurrentPath();
+// print_r($aHits['source']);
+
+function complete_source(){
+    global $aHits;
+    return array_values($aHits['source']);
+}
+
+
+readline_completion_function("complete_source");
+
+
+// readline_completion_function(array_keys($aHits['source']));
+$sSource=input("Source > ");
+echo "DEBUG: sSource = $sSource\n";
