@@ -15,6 +15,8 @@ class dsfproject {
      */
     protected array $_aTargets = [];
 
+    protected string $_sSource = '';
+
     /**
      * Constructor
      */
@@ -22,7 +24,6 @@ class dsfproject {
         $this->_readConifigs();
     }
    
-
 
     /**
      * Read all configs written by bash and parse it
@@ -93,6 +94,8 @@ class dsfproject {
             // echo "DEBUG: check source ".$aProfile['source'] . "\n";
             if ( $aProfile['source'] === $sCurrentDir ){
                 $aReturn['source_hit'] = $sKey;
+                echo "INFO: set source to <$sKey>\n";
+                $this->setSource($sKey);
             }
             if(strstr($aProfile['source'], $sCurrentDir)){
                 $aReturn['source'][] = $sKey;
@@ -131,9 +134,21 @@ class dsfproject {
     /**
      * Set the source directory for the given profile key
      * @param string $sKey Key of the profile
-     * @return void
+     * @return string  new value of source
      */
-    // public function setSource($sKey){
-    //     $this->_aProfiles[$sKey]['source'] = getcwd();
-    // }
+    public function setSource($sKey): string{
+        $this->_sSource = isset($this->_aProfiles[$sKey]) ? $sKey : '';
+        return $this->_sSource;
+    }
+
+
+    public function getSource(): string{
+        return $this->_sSource;
+    }
+
+    public function getCurrentProfile(): array
+    {
+        return $this->_sSource ? $this->_aProfiles[$this->_sSource] : [];
+    }
+
 }

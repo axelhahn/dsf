@@ -35,16 +35,26 @@ function cecho($sColor, $sText){
     color("reset");
 }
 
-    /**
-     * read user input with a given prefix
-     * @param string $sPrefix prefix to show in front of the input
-     * @param mixed $default value to return if the user does not enter anything
-     * @return string the user entered string
-     */
 
+/**
+ * Helper function for tab completion
+ * @return array
+ */
+function complete_source(){
+    global $aHits;
+    return array_values($aHits['source']);
+}
+
+
+/**
+ * read user input with a given prefix
+ * @param string $sPrefix prefix to show in front of the input
+ * @param mixed $default value to return if the user does not enter anything
+ * @return string the user entered string
+ */
 function input($sPrefix, $default = null) 
 {    
-    color('input', $sPrefix ? $sPrefix : '>');
+    cecho('input', $sPrefix ? $sPrefix : '>');
     echo ' ';
 
     if (PHP_OS == 'WINNT') {
@@ -84,17 +94,21 @@ echo "Current path: ".getcwd()."\n";
 
 global $aHits;
 $aHits=$oSrc->detectCurrentPath();
-// print_r($aHits['source']);
 
-function complete_source(){
-    global $aHits;
-    return array_values($aHits['source']);
+
+// $oSrc->dump();
+// print_r($aHits);
+
+if(!$oSrc->getSource()){
+    echo "Select a source:\n";
+    print_r($aHits['source']);
+    readline_completion_function("complete_source");
+    $sSource=input("Source > ");
+    $oSrc->setSource($sSource);
+    if(!$oSrc->getSource()){
+        exit;
+    }
 }
 
-
-readline_completion_function("complete_source");
-
-
-// readline_completion_function(array_keys($aHits['source']));
-$sSource=input("Source > ");
-echo "DEBUG: sSource = $sSource\n";
+echo "SOURCE: ".$oSrc->getSource()."\n";
+print_r($oSrc->getCurrentProfile());
