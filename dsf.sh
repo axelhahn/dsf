@@ -21,6 +21,7 @@
 # 2022-11-16  v0.10   axel hahn  show config file per profile; test vi if EDITOR is not set
 # 2022-12-20  v0.11   axel hahn  add param -W that does the same like -w but shows diffs
 # 2024-07-20  v0.12   axel hahn  highlight current dir in path selection; add param -S; autodetect target on source seelction
+# 2025-09-08  v0.13   axel hahn  fix file positioning in diff commands
 # ======================================================================
 
 DSF_SELFDIR="$( dirname $0 )"
@@ -33,7 +34,7 @@ DSF_PROFILES=${DSF_SELFDIR}/profiles
 DSF_CONFIG=
 DSF_SOURCE=
 DSF_TARGET=
-DSF_VERSION=0.12
+DSF_VERSION=0.13
 
 DSF_WORKDIR="$( realpath . )"
 
@@ -252,7 +253,7 @@ function _diff(){
         do
             _newfile=$( _getTargetfile "$myfile" )
             h3 "File: ${myfile}"
-            if ! diff "${DSF_TARGET}/${_newfile}" "${DSF_SOURCE}/${myfile}" >/dev/null 2>&1; then
+            if ! diff "${DSF_SOURCE}/${myfile}" "${DSF_TARGET}/${_newfile}" >/dev/null 2>&1; then
                 ls -l --sort=none "${DSF_SOURCE}/${myfile}" | sed "s#^#FROM #"
                 ls -l "${DSF_TARGET}/${_newfile}"           | sed "s#^#TO   #"
                 echo
